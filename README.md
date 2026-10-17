@@ -98,6 +98,10 @@ docker-compose.yml  Web + PostgreSQL
 
 The rooms are added when the app starts. To change them, edit the `ROOMS` list in `db.py`.
 
+## Git workflow
+
+Create a branch, commit and push changes, then open a pull request for review before merging into `main`.
+
 ## Common problems
 
 - **Port 8000 already in use:** set `WEB_PORT=8001` in `.env` and open http://localhost:8001.
