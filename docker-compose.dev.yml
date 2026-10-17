@@ -1,0 +1,9 @@
+# Only for local development. Mounts your code into the container and turns
+# on auto reload, so saving a file updates the site without a rebuild.
+# Run with: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+services:
+  web:
+    volumes:
+      - .:/app
+    environment:
+      GUNICORN_CMD_ARGS: "--reload"

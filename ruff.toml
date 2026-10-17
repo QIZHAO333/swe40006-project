@@ -1,0 +1,5 @@
+line-length = 100
+
+[lint]
+# E/W: style, F: errors like unused imports, I: import order
+select = ["E", "W", "F", "I"]
