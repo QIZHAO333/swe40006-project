@@ -17,14 +17,24 @@
   <label for="topic">Topic</label>
   <input id="topic" name="topic" value="{{ form.topic }}" placeholder="Docker Compose revision">
 
-  <label for="room">Room</label>
-  <input id="room" name="room" value="{{ form.room }}" placeholder="ATC325">
+  <label for="room_id">Room</label>
+  <select id="room_id" name="room_id">
+    <option value="">Choose a room</option>
+    {% for r in rooms %}
+    <option value="{{ r.id }}" {% if form.room_id|string == r.id|string %}selected{% endif %}>
+      {{ r.name }} (seats {{ r.capacity }})
+    </option>
+    {% endfor %}
+  </select>
 
   <label for="session_date">Date</label>
   <input id="session_date" name="session_date" type="date" value="{{ form.session_date }}">
 
   <label for="start_time">Start time</label>
   <input id="start_time" name="start_time" type="time" value="{{ form.start_time }}">
+
+  <label for="end_time">End time</label>
+  <input id="end_time" name="end_time" type="time" value="{{ form.end_time }}">
 
   <div class="form-buttons">
     <button>Save</button>

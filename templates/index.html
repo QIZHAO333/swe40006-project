@@ -4,7 +4,7 @@
 <table>
   <thead>
     <tr>
-      <th>Unit</th><th>Topic</th><th>Room</th><th>Date</th><th>Start</th>
+      <th>Unit</th><th>Topic</th><th>Room</th><th>Date</th><th>Time</th>
       {% if show_actions %}<th></th>{% endif %}
     </tr>
   </thead>
@@ -13,9 +13,9 @@
     <tr>
       <td>{{ s.unit_code }}</td>
       <td>{{ s.topic }}</td>
-      <td>{{ s.room }}</td>
+      <td><a href="{{ url_for('room_calendar', room_id=s.room_id, week=s.session_date) }}">{{ s.room }}</a></td>
       <td>{{ s.session_date.strftime('%a %d %b %Y') }}</td>
-      <td>{{ s.start_time.strftime('%H:%M') }}</td>
+      <td>{{ s.start_time.strftime('%H:%M') }} to {{ s.end_time.strftime('%H:%M') }}</td>
       {% if show_actions %}
       <td class="actions">
         <a href="{{ url_for('edit_session', session_id=s.id) }}">Edit</a>

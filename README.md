@@ -2,7 +2,7 @@
 
 SWE40006 group project, CL06_Fri10:30_G02.
 
-Study Board lets students post study sessions for a unit so others can join. You can post, edit and delete a session, filter by unit code, and see upcoming and past sessions in separate lists. The app stops two sessions being booked in the same room at the same date and start time.
+Study Board lets students post study sessions for a unit so others can join. You can post, edit and delete a session, filter by unit code, and see upcoming and past sessions in separate lists. Each session books one of the rooms for a start and end time. Every room has a weekly calendar, and the app refuses any booking that overlaps one already in that room.
 
 Built with Flask, gunicorn and PostgreSQL 16, all running in Docker Compose.
 
@@ -37,16 +37,6 @@ Check it is working at http://localhost:8000/health. You should see `"status": "
 
 Press `Ctrl+C` to stop it.
 
-### Dev mode (auto reload)
-
-This mounts your code into the container, so when you save a Python or HTML file the site updates without rebuilding:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-```
-
-You still need `--build` again if you change `requirements.txt`.
-
 ## Useful commands
 
 | What | Command |
@@ -69,7 +59,6 @@ The database lives in a Docker volume called `pgdata`, so your sessions are stil
 | `POSTGRES_DB` | Database name | `studyboard` |
 | `APP_ENV` | Shown in the footer and `/health` | `development` |
 | `WEB_PORT` | Port on your laptop | `8000` |
-| `APP_TIMEZONE` | Used to decide which sessions are in the past | `Australia/Melbourne` |
 | `GIT_SHA` | Build argument. The pipeline sets it to the commit SHA | `local` |
 
 Staging and Production use the same files with their own `.env` and a real password.
@@ -85,7 +74,6 @@ templates/          HTML pages (Jinja)
 static/style.css    Styling
 Dockerfile          Builds the web image
 docker-compose.yml  Web + PostgreSQL
-docker-compose.dev.yml  Extra settings for local dev only
 ```
 
 ## Pages
@@ -96,17 +84,23 @@ docker-compose.dev.yml  Extra settings for local dev only
 | `/sessions/new` | Post a session |
 | `/sessions/<id>/edit` | Edit a session |
 | `/sessions/<id>/delete` | Confirm page, then delete |
+| `/rooms` | List of bookable rooms |
+| `/rooms/<id>` | Weekly calendar for a room. `?week=2026-10-20` picks the week |
 | `/health` | Returns JSON. Checks the database connection |
 
 ## Form rules
 
 - Unit code must be 3 letters and 5 numbers, like `SWE40006`. Lowercase is turned into uppercase.
-- Topic (max 100 characters) and room (max 30) are required.
-- Date and start time are required, and the session can't be in the past.
-- The same room can't be booked twice at the same date and start time. Room names are matched without caring about case, so `atc325` and `ATC325` count as the same room.
+- Topic (max 100 characters) and a room are required.
+- Date, start time and end time are required. The end must be after the start, and the session can't be in the past.
+- Rooms can be booked between 07:00 and 22:00.
+- A booking can't overlap another booking in the same room. Back to back is fine, so 10:00 to 12:00 and 12:00 to 13:00 can both go in.
+
+The rooms are added when the app starts. To change them, edit the `ROOMS` list in `db.py`.
 
 ## Common problems
 
 - **Port 8000 already in use:** set `WEB_PORT=8001` in `.env` and open http://localhost:8001.
 - **`/health` says the database is unreachable:** run `docker compose ps` and check `db` shows as healthy. `docker compose logs db` shows why it failed.
+- **Error about a missing column after pulling new code:** the table layout changed. Run `docker compose down -v` and start again. This deletes your local data.
 - **Changed the password in `.env` and now it won't connect:** PostgreSQL only reads the password the first time it creates the volume. Run `docker compose down -v` and start again. This deletes your local data.

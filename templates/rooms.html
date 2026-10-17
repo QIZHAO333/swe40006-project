@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Rooms | Study Board{% endblock %}
+
+{% block content %}
+<h2>Bookable rooms</h2>
+<table>
+  <thead>
+    <tr><th>Room</th><th>Seats</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for r in rooms %}
+    <tr>
+      <td>{{ r.name }}</td>
+      <td>{{ r.capacity }}</td>
+      <td class="actions">
+        <a href="{{ url_for('room_calendar', room_id=r.id) }}">View calendar</a>
+        <a href="{{ url_for('new_session', room_id=r.id) }}">Book</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -9,7 +9,10 @@
 <body>
   <header>
     <a href="{{ url_for('index') }}" class="brand">Study Board</a>
-    <a href="{{ url_for('new_session') }}" class="button">Post a session</a>
+    <nav>
+      <a href="{{ url_for('rooms') }}">Rooms</a>
+      <a href="{{ url_for('new_session') }}" class="button">Post a session</a>
+    </nav>
   </header>
   <main>
     {% block content %}{% endblock %}
