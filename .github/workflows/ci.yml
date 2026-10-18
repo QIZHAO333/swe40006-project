@@ -13,6 +13,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci_user
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: studyboard_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_user -d studyboard_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://ci_user:ci_password@localhost:5432/studyboard_test
+      APP_ENV: testing
+
     steps:
       - name: Download repository code
         uses: actions/checkout@v6
@@ -30,7 +49,10 @@ jobs:
       - name: Check Python code with Ruff
         run: python -m ruff check .
 
-      - name: Run application tests
+      - name: Initialise test database
+        run: python init_db.py
+
+      - name: Run application and validation tests
         run: python -m pytest tests -v --junitxml=test-results.xml
 
       - name: Save test report
