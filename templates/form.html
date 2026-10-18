@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | Study Board{% endblock %}
+
+{% block content %}
+<h2>{{ title }}</h2>
+
+{% if errors %}
+<ul class="errors">
+  {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+<form method="post" class="session-form">
+  <label for="unit_code">Unit code</label>
+  <input id="unit_code" name="unit_code" value="{{ form.unit_code }}" placeholder="SWE40006">
+
+  <label for="topic">Topic</label>
+  <input id="topic" name="topic" value="{{ form.topic }}" placeholder="Docker Compose revision">
+
+  <label for="room_id">Room</label>
+  <select id="room_id" name="room_id">
+    <option value="">Choose a room</option>
+    {% for r in rooms %}
+    <option value="{{ r.id }}" {% if form.room_id|string == r.id|string %}selected{% endif %}>
+      {{ r.name }} (seats {{ r.capacity }})
+    </option>
+    {% endfor %}
+  </select>
+
+  <label for="session_date">Date</label>
+  <input id="session_date" name="session_date" type="date" value="{{ form.session_date }}">
+
+  <label for="start_time">Start time</label>
+  <input id="start_time" name="start_time" type="time" value="{{ form.start_time }}">
+
+  <label for="end_time">End time</label>
+  <input id="end_time" name="end_time" type="time" value="{{ form.end_time }}">
+
+  <div class="form-buttons">
+    <button>Save</button>
+    <a href="{{ url_for('index') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

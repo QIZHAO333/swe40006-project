@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Delete session | Study Board{% endblock %}
+
+{% block content %}
+<h2>Delete this session?</h2>
+<p>
+  <strong>{{ s.unit_code }}</strong>: {{ s.topic }}<br>
+  {{ s.room }}, {{ s.session_date.strftime('%a %d %b %Y') }},
+  {{ s.start_time.strftime('%H:%M') }} to {{ s.end_time.strftime('%H:%M') }}
+</p>
+<form method="post" class="form-buttons">
+  <button class="danger">Yes, delete it</button>
+  <a href="{{ url_for('index') }}">No, go back</a>
+</form>
+{% endblock %}

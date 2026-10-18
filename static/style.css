@@ -1,0 +1,59 @@
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  color: #222;
+  background: #f6f7f9;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: #1f3a5f;
+}
+
+header a { color: white; text-decoration: none; }
+.brand { font-size: 1.3rem; font-weight: bold; }
+
+main { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+
+table { width: 100%; border-collapse: collapse; background: white; margin-bottom: 24px; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
+th { background: #eef1f5; }
+.actions a { margin-right: 8px; }
+
+.button, button {
+  background: #2d6cdf;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+button.danger { background: #c0392b; }
+
+.filter { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+
+.session-form { display: flex; flex-direction: column; max-width: 400px; gap: 4px; }
+.session-form input { padding: 6px; margin-bottom: 8px; }
+.form-buttons { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
+
+.errors { background: #fdecea; border: 1px solid #f5c2c0; padding: 10px 28px; color: #8a1f17; }
+.empty { color: #666; }
+
+footer { text-align: center; color: #777; font-size: 0.85rem; padding: 24px; }
+
+nav { display: flex; gap: 16px; align-items: center; }
+select { padding: 6px; margin-bottom: 8px; }
+
+.seats { font-size: 0.9rem; font-weight: normal; color: #666; }
+.week-nav { display: flex; gap: 16px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+
+.calendar { table-layout: fixed; }
+.calendar th:first-child { width: 60px; }
+.calendar td { height: 28px; padding: 2px 6px; border: 1px solid #e3e6ea; font-size: 0.85rem; }
+.calendar td.booked { background: #dbe7fb; }
+.calendar td.booked small { display: block; color: #555; }
