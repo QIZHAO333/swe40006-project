@@ -4,7 +4,6 @@ import pytest
 
 from validation import validate_session
 
-
 NOW = datetime(2030, 1, 1, 9, 0)
 
 

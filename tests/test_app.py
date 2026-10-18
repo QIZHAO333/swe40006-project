@@ -1,6 +1,6 @@
+import os
 from datetime import timedelta
 from urllib.parse import urlparse
-import os
 
 import pytest
 
