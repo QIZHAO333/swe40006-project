@@ -24,7 +24,7 @@ def test_health_endpoint(client):
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.get_data(as_text=True) == "wrong"
+    assert response.get_data(as_text=True) == "ok"
 
 def test_add_session_redirects_home(client):
     response = client.post(
