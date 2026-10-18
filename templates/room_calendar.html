@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ room.name }} | Study Board{% endblock %}
+
+{% block content %}
+<h2>{{ room.name }} <span class="seats">seats {{ room.capacity }}</span></h2>
+
+<div class="week-nav">
+  <a href="{{ url_for('room_calendar', room_id=room.id, week=prev_week) }}">&larr; Previous week</a>
+  <strong>Week of {{ days[0].strftime('%d %b %Y') }}</strong>
+  <a href="{{ url_for('room_calendar', room_id=room.id, week=next_week) }}">Next week &rarr;</a>
+  <a href="{{ url_for('new_session', room_id=room.id) }}" class="button">Book this room</a>
+</div>
+
+<table class="calendar">
+  <thead>
+    <tr>
+      <th></th>
+      {% for d in days %}<th>{{ d.strftime('%a %d %b') }}</th>{% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for slot, cells in rows %}
+    <tr>
+      <th>{{ slot.strftime('%H:%M') }}</th>
+      {% for s in cells %}
+        {% if s %}
+        <td class="booked">
+          <a href="{{ url_for('edit_session', session_id=s.id) }}">{{ s.unit_code }}</a>
+          <small>{{ s.start_time.strftime('%H:%M') }}-{{ s.end_time.strftime('%H:%M') }}</small>
+        </td>
+        {% else %}
+        <td class="free"></td>
+        {% endif %}
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
