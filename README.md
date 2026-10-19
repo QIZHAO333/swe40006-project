@@ -102,6 +102,30 @@ The rooms are added when the app starts. To change them, edit the `ROOMS` list i
 
 Create a branch, commit and push changes, then open a pull request for review before merging into `main`.
 
+## Automated testing
+
+GitHub Actions runs automatically for every push and pull request. The CI workflow:
+
+1. Starts an isolated PostgreSQL 16 test database.
+2. Checks the Python code with Ruff.
+3. Initialises the test database.
+4. Runs the unit and integration tests with pytest.
+5. Uploads the pytest test report as a workflow artifact.
+
+The `main` branch is protected and the required `Ruff and pytest` status check must pass before changes can be merged.
+
+## Deployment environments
+
+GitHub Environments named `staging` and `production` are configured for the deployment pipeline. Environment-specific credentials must be stored in GitHub Environment Secrets and must never be committed to the repository.
+
+The planned Level 3 deployment process is:
+
+1. Merge a tested pull request into `main`.
+2. Deploy the selected commit or Docker image to Staging.
+3. Run E2E acceptance tests against the Staging application.
+4. Promote the same tested version to Production.
+5. Verify the Production homepage, `/health` endpoint and database connection.
+
 ## Common problems
 
 - **Port 8000 already in use:** set `WEB_PORT=8001` in `.env` and open http://localhost:8001.
