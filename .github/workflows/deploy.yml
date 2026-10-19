@@ -1,0 +1,29 @@
+name: Level 3 Deployment
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-image:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download repository code
+        uses: actions/checkout@v6
+
+      - name: Build deployment image
+        run: |
+          docker build \
+            --build-arg GIT_SHA="${{ github.sha }}" \
+            --tag "study-board:${{ github.sha }}" \
+            .
+
+# TODO: Add a Staging deployment job using the staging environment.
+# TODO: Run E2E acceptance tests against the deployed Staging URL.
+# TODO: Add a Production deployment job using the production environment.
+# Server credentials must be added through GitHub Environment Secrets.
