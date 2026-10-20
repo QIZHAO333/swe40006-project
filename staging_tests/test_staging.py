@@ -38,3 +38,4 @@ def test_staging_health(staging_url):
     assert health["status"] == "ok"
     assert health["database"] == "ok"
     assert health["env"] == "staging"
+    
