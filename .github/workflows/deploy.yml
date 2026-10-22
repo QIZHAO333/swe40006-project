@@ -1,29 +1,181 @@
-name: Level 3 Deployment
+name: Level 4 Deployment
 
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: studyboard-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  build-image:
-    name: Build Docker image
+  checks:
+    name: Pre-deployment checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci_user
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: studyboard_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_user -d studyboard_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ci_user:ci_password@localhost:5432/studyboard_test
+      APP_ENV: testing
     steps:
-      - name: Download repository code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Run Ruff
+        run: python -m ruff check .
+      - name: Initialise test database
+        run: python init_db.py
+      - name: Run tests
+        run: python -m pytest tests -v --junitxml=deployment-unit-results.xml
+      - name: Save test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-unit-results
+          path: deployment-unit-results.xml
+          if-no-files-found: ignore
 
-      - name: Build deployment image
+  build-image:
+    name: Build and publish Docker image
+    needs: checks
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      image: ${{ steps.reference.outputs.image }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and publish once
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: ${{ vars.DOCKERHUB_USERNAME }}/studyboard:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+      - name: Record immutable image reference
+        id: reference
+        env:
+          IMAGE_REPOSITORY: ${{ vars.DOCKERHUB_USERNAME }}/studyboard
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
         run: |
-          docker build \
-            --build-arg GIT_SHA="${{ github.sha }}" \
-            --tag "study-board:${{ github.sha }}" \
-            .
+          echo "image=${IMAGE_REPOSITORY}@${IMAGE_DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "Image: ${IMAGE_REPOSITORY}@${IMAGE_DIGEST}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: ${GITHUB_SHA}" >> "$GITHUB_STEP_SUMMARY"
 
-# TODO: Add a Staging deployment job using the staging environment.
-# TODO: Run E2E acceptance tests against the deployed Staging URL.
-# TODO: Add a Production deployment job using the production environment.
-# Server credentials must be added through GitHub Environment Secrets.
+  staging:
+    name: Deploy Staging and run E2E
+    needs: build-image
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    permissions:
+      contents: read
+      id-token: write
+    # Also serialises with the existing CI booking tests.
+    concurrency:
+      group: staging-booking-e2e
+      cancel-in-progress: false
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+      IMAGE_REFERENCE: ${{ needs.build-image.outputs.image }}
+      DEPLOYMENT_URL: ${{ vars.STAGING_URL }}
+      STAGING_URL: ${{ vars.STAGING_URL }}
+      EXPECTED_ENV: staging
+      EXPECTED_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser test tools
+        run: python -m pip install "pytest>=8,<10" playwright tzdata
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: Authenticate to AWS through OIDC
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Deploy through SSM and verify version
+        run: python scripts/deploy.py
+      - name: Run Staging website tests
+        run: python -m pytest staging_tests -v --junitxml=deployment-staging-results.xml
+      - name: Run booking E2E tests
+        run: python -m pytest e2e_tests -v --junitxml=deployment-e2e-results.xml
+      - name: Recheck tested version
+        run: python scripts/deploy.py --health-only
+      - name: Save Staging test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-staging-results
+          path: |
+            deployment-staging-results.xml
+            deployment-e2e-results.xml
+          if-no-files-found: ignore
+
+  production:
+    name: Deploy approved image to Production
+    needs: [build-image, staging]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # GitHub required reviewers pause this job before it starts.
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+      IMAGE_REFERENCE: ${{ needs.build-image.outputs.image }}
+      DEPLOYMENT_URL: ${{ vars.PRODUCTION_URL }}
+      EXPECTED_ENV: production
+      EXPECTED_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Authenticate to AWS through OIDC
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Deploy same digest and verify Production health
+        run: python scripts/deploy.py
